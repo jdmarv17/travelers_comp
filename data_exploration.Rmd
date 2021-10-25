@@ -1,0 +1,13 @@
+---
+title: "data_exploration"
+author: "Josh Marvald"
+date: "10/25/2021"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+library(tidyverse)
+```
+
+
+
