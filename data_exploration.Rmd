@@ -15,4 +15,22 @@ train <- read_csv("data/train_2021.csv")
 ```
 
 
+```{r}
+# indicator vars
+train <- 
+  train %>%
+  mutate(Gender = ifelse(gender == "M", 1, 0))
+```
+
+
+```{r}
+# just playing with glm
+test <- glm(fraud ~ age_of_driver + Gender + annual_income, data = train, family = binomial)
+
+probs <- predict(test, data = train, type = "response")
+preds <- ifelse(probs >= .5, 1, 0)
+
+mean(train$fraud == preds)
+```
+
 
