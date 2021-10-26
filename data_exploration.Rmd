@@ -10,4 +10,9 @@ library(tidyverse)
 ```
 
 
+```{r message=FALSE, warning=FALSE}
+train <- read_csv("data/train_2021.csv")
+```
+
+
 
