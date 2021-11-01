@@ -7,14 +7,19 @@ output: html_document
 
 ```{r setup, include=FALSE}
 library(tidyverse)
-library(olsrr)
-library(bestglm)
+
 ```
 
 
 ```{r message=FALSE, warning=FALSE}
 train <- read_csv("data/train_2021.csv")
+train <- na.omit(train)
+
+# get rid of claim_number, claim_date, channel, vehicle_color, vehicle_category
+
+
 ```
+
 
 
 ```{r}
@@ -58,22 +63,6 @@ train %>%
 
 
 ```{r}
-# just playing with glm
-test <- 
-  train %>%
-  filter(!is.na(marital_status)) %>%
-    glm(fraud ~ age_of_driver + marital_status + annual_income, data = ., family = binomial)
-
-probs <- predict(test, data = train, type = "response")
-preds <- ifelse(probs >= .5, 1, 0)
-
-train %>%
-  filter(!is.na(marital_status)) %>%
-  summarise(mean(fraud == preds))
-```
-
-
-```{r}
 # weight training data more heavily for fraud cases
 fraud_cases <- 
   train %>%
@@ -98,42 +87,90 @@ weighted_train <-
 
 ```{r}
 # best glm attempts
-subset <-
-  weighted_train %>%
-  mutate(age = case_when(
-    age_of_driver >= 50 ~ 1,
-    age_of_driver < 50 ~ 0
-  )) %>%
-  select(age, Gender, marital_status, high_education_ind, witness_present_ind, fraud) 
+# subset <-
+#   weighted_train %>%
+#   mutate(age = case_when(
+#     age_of_driver >= 50 ~ 1,
+#     age_of_driver < 50 ~ 0
+#   )) %>%
+#   select(age, Gender, marital_status, high_education_ind, witness_present_ind, fraud) 
+# 
+# subset$age <- as.logical(subset$age)
+# subset$Gender <- as.logical(subset$Gender)
+# subset$marital_status <- as.logical(subset$marital_status)
+# subset$high_education_ind <- as.logical(subset$high_education_ind)
+# subset$witness_present_ind <- as.logical(subset$witness_present_ind)
+# subset$fraud <- as.logical(subset$fraud)
+# 
+# 
+# # prep
+# for_best_logistic <- within(subset, {
+#     age        
+#     Gender
+#     marital_status 
+#     high_education_ind 
+#     witness_present_ind
+#     y <- fraud        
+#     fraud  <- NULL        
+# })
 
-subset$age <- as.logical(subset$age)
-subset$Gender <- as.logical(subset$Gender)
-subset$marital_status <- as.logical(subset$marital_status)
-subset$high_education_ind <- as.logical(subset$high_education_ind)
-subset$witness_present_ind <- as.logical(subset$witness_present_ind)
-subset$fraud <- as.logical(subset$fraud)
 
-
-# prep
-for_best_logistic <- within(subset, {
-    age        # Delete
-    Gender
-    marital_status 
-    high_education_ind 
-    witness_present_ind
-    y <- fraud         # bwt into y
-    fraud  <- NULL        # Delete bwt
-})
-
-
-res.best.logistic <-
-    bestglm(Xy = for_best_logistic,
-            family = binomial,          # binomial family for logistic
-            IC = "AIC",                 # Information criteria for
-            method = "exhaustive")
+# res.best.logistic <-
+#     bestglm(Xy = for_best_logistic,
+#             family = binomial,
+#             IC = "AIC",
+#             method = "exhaustive")
 
 
 # still cant figure out the form of paramters for bestglm()
 
 ```
+
+
+
+```{r}
+subset <-
+  train %>%
+  select(marital_status, safty_rating, annual_income, high_education_ind,
+         witness_present_ind, policy_report_filed_ind, address_change_ind, past_num_of_claims,
+         liab_prct, age_of_vehicle, vehicle_category, Gender, claim_est_payout,
+         channel, accident_site, claim_day_of_week, living_status, age_of_driver) %>%
+  mutate(day = case_when(
+    claim_day_of_week == "Sunday" ~ 0,
+    claim_day_of_week == "Monday" ~ 1,
+    claim_day_of_week == "Tuesday" ~ 2,
+    claim_day_of_week == "Wednesday" ~ 3,
+    claim_day_of_week == "Thursday" ~ 4,
+    claim_day_of_week == "Friday" ~ 5,
+    claim_day_of_week == "Saturday" ~ 6
+  )) %>%
+  mutate(rent_own = case_when(
+    living_status == "Own" ~ 1,
+    living_status == "Rent" ~ 0
+  )) %>%
+  mutate(site = case_when(
+    accident_site == "Highway" ~ 0,
+    accident_site == "Parking Lot" ~ 1,
+    accident_site == "Local" ~ 2
+  )) %>%
+  mutate(car_size = case_when(
+    vehicle_category == "Compact" ~ 0,
+    vehicle_category == "Medium" ~ 1,
+    vehicle_category == "Large" ~ 2
+  )) %>%
+  mutate(method = case_when(
+    channel == "Broker" ~ 0,
+    channel == "Phone" ~ 1,
+    channel == "Online" ~ 2
+  )) %>%
+  select(marital_status, safty_rating, annual_income, high_education_ind,
+         witness_present_ind, policy_report_filed_ind, address_change_ind, past_num_of_claims,
+         liab_prct, age_of_vehicle, car_size, Gender, claim_est_payout,
+         method, site, day, rent_own, age_of_driver)
+
+corr <- cor(subset)
+corrplot::corrplot(corr)
+```
+
+
 
