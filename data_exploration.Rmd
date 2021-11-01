@@ -7,6 +7,8 @@ output: html_document
 
 ```{r setup, include=FALSE}
 library(tidyverse)
+library(olsrr)
+library(bestglm)
 ```
 
 
@@ -24,14 +26,110 @@ train <-
 
 
 ```{r}
+# any asoociations?
+
+# married or not
+train %>%
+  group_by(marital_status) %>%
+  summarise(fraud_perc = mean(fraud))
+# looks like there is some association
+
+# male or female
+train %>%
+  group_by(gender) %>%
+  summarise(fraud_perc = mean(fraud))
+
+# age
+train %>%
+  mutate(age = case_when(
+    age_of_driver >= 50 ~ 1,
+    age_of_driver < 50 ~ 0)) %>%
+  group_by(age) %>%
+  summarise(fraud_perc = mean(fraud))
+# looks like 50 gives biggest diff
+
+train %>%
+  mutate(income = case_when(
+    annual_income >= 25000 ~ 1,
+    annual_income < 25000 ~ 0)) %>%
+  group_by(income) %>%
+  summarise(fraud_perc = mean(fraud))
+```
+
+
+```{r}
 # just playing with glm
-test <- glm(fraud ~ age_of_driver + Gender + annual_income, data = train, family = binomial)
+test <- 
+  train %>%
+  filter(!is.na(marital_status)) %>%
+    glm(fraud ~ age_of_driver + marital_status + annual_income, data = ., family = binomial)
 
 probs <- predict(test, data = train, type = "response")
 preds <- ifelse(probs >= .5, 1, 0)
 
-mean(train$fraud == preds)
-mean(!train$fraud)
+train %>%
+  filter(!is.na(marital_status)) %>%
+  summarise(mean(fraud == preds))
 ```
 
+
+```{r}
+# weight training data more heavily for fraud cases
+fraud_cases <- 
+  train %>%
+  filter(fraud == 1)
+
+no_fraud <- 
+  train %>%
+  filter(fraud == 0)
+
+set.seed(123)
+fraud_sample <-
+  sample(fraud_cases$claim_number, size = 1500)
+
+no_fraud_sample <-
+  sample(no_fraud$claim_number, size = 1500)
+
+weighted_train <-
+  train %>%
+  filter(claim_number %in% fraud_sample | claim_number %in% no_fraud_sample)
+```
+
+
+```{r}
+# best glm attempts
+subset <-
+  weighted_train %>%
+  mutate(age = case_when(
+    age_of_driver >= 50 ~ 1,
+    age_of_driver < 50 ~ 0
+  )) %>%
+  select(age, Gender, marital_status, high_education_ind, witness_present_ind, fraud) 
+
+subset$age <- as.logical(subset$age)
+subset$Gender <- as.logical(subset$Gender)
+subset$marital_status <- as.logical(subset$marital_status)
+subset$high_education_ind <- as.logical(subset$high_education_ind)
+subset$witness_present_ind <- as.logical(subset$witness_present_ind)
+subset$fraud <- as.logical(subset$fraud)
+
+
+# prep
+for_best_logistic <- within(subset, {
+    age        # Delete
+    Gender
+    marital_status 
+    high_education_ind 
+    witness_present_ind
+    y <- fraud         # bwt into y
+    fraud  <- NULL        # Delete bwt
+})
+
+
+res.best.logistic <-
+    bestglm(Xy = for_best_logistic,
+            family = binomial,          # binomial family for logistic
+            IC = "AIC",                 # Information criteria for
+            method = "exhaustive")
+```
 
