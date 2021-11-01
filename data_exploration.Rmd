@@ -131,5 +131,9 @@ res.best.logistic <-
             family = binomial,          # binomial family for logistic
             IC = "AIC",                 # Information criteria for
             method = "exhaustive")
+
+
+# still cant figure out the form of paramters for bestglm()
+
 ```
 
