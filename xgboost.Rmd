@@ -205,6 +205,23 @@ probs2 <- predict(boost_mod, test2)
 preds2 <- ifelse(probs2 >= .5, 1, 0)
 
 
-mean(preds2 == test2_fraud)
+match_df <-
+  bind_cols(preds2, test2_fraud) %>%
+  rename(preds = ...1, fraud = ...2)
+
+match_df <-
+  match_df %>%
+  mutate(match_ones = case_when(
+    preds2 == 1 & fraud == 1 ~ 1,
+    preds2 != 1 | fraud != 1 ~ 0
+  )) %>%
+  mutate(match_zero = case_when(
+    preds2 == 0 & fraud == 0 ~ 1,
+    preds2 != 0 | fraud != 0 ~ 0
+  ))
+
+mean(match_df$match_ones)
+mean(match_df$match_zero)
+mean(match_df$fraud)
 ```
 
