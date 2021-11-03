@@ -14,6 +14,7 @@ library(xgboost)
 
 ```{r}
 train <- read_csv("data/train_2021.csv")
+
 train <- na.omit(train)
 
 '%ni%' <- Negate('%in%')
@@ -45,45 +46,45 @@ weighted_train <-
 
 ```{r}
 # get numeric
-subset <-
-  weighted_train %>%
-  select(claim_number, marital_status, safty_rating, annual_income, high_education_ind,
-         witness_present_ind, policy_report_filed_ind, address_change_ind, past_num_of_claims,
-         liab_prct, age_of_vehicle, vehicle_category, gender, claim_est_payout,
-         channel, accident_site, claim_day_of_week, living_status, age_of_driver, fraud) %>%
-  mutate(day = case_when(
-    claim_day_of_week == "Sunday" ~ 0,
-    claim_day_of_week == "Monday" ~ 1,
-    claim_day_of_week == "Tuesday" ~ 2,
-    claim_day_of_week == "Wednesday" ~ 3,
-    claim_day_of_week == "Thursday" ~ 4,
-    claim_day_of_week == "Friday" ~ 5,
-    claim_day_of_week == "Saturday" ~ 6
-  )) %>%
-  mutate(rent_own = case_when(
-    living_status == "Own" ~ 1,
-    living_status == "Rent" ~ 0
-  )) %>%
-  mutate(site = case_when(
-    accident_site == "Highway" ~ 0,
-    accident_site == "Parking Lot" ~ 1,
-    accident_site == "Local" ~ 2
-  )) %>%
-  mutate(car_size = case_when(
-    vehicle_category == "Compact" ~ 0,
-    vehicle_category == "Medium" ~ 1,
-    vehicle_category == "Large" ~ 2
-  )) %>%
-  mutate(method = case_when(
-    channel == "Broker" ~ 0,
-    channel == "Phone" ~ 1,
-    channel == "Online" ~ 2
-  )) %>%
-  mutate(Gender = ifelse(gender == "M", 1, 0)) %>%
-  select(claim_number, marital_status, safty_rating, annual_income, high_education_ind,
-         witness_present_ind, policy_report_filed_ind, address_change_ind, past_num_of_claims,
-         liab_prct, age_of_vehicle, car_size, Gender, claim_est_payout,
-         method, site, day, rent_own, age_of_driver, fraud)
+# subset <-
+#   weighted_train %>%
+#   select(claim_number, marital_status, safty_rating, annual_income, high_education_ind,
+#          witness_present_ind, policy_report_filed_ind, address_change_ind, past_num_of_claims,
+#          liab_prct, age_of_vehicle, vehicle_category, gender, claim_est_payout,
+#          channel, accident_site, claim_day_of_week, living_status, age_of_driver, fraud) %>%
+#   mutate(day = case_when(
+#     claim_day_of_week == "Sunday" ~ 0,
+#     claim_day_of_week == "Monday" ~ 1,
+#     claim_day_of_week == "Tuesday" ~ 2,
+#     claim_day_of_week == "Wednesday" ~ 3,
+#     claim_day_of_week == "Thursday" ~ 4,
+#     claim_day_of_week == "Friday" ~ 5,
+#     claim_day_of_week == "Saturday" ~ 6
+#   )) %>%
+#   mutate(rent_own = case_when(
+#     living_status == "Own" ~ 1,
+#     living_status == "Rent" ~ 0
+#   )) %>%
+#   mutate(site = case_when(
+#     accident_site == "Highway" ~ 0,
+#     accident_site == "Parking Lot" ~ 1,
+#     accident_site == "Local" ~ 2
+#   )) %>%
+#   mutate(car_size = case_when(
+#     vehicle_category == "Compact" ~ 0,
+#     vehicle_category == "Medium" ~ 1,
+#     vehicle_category == "Large" ~ 2
+#   )) %>%
+#   mutate(method = case_when(
+#     channel == "Broker" ~ 0,
+#     channel == "Phone" ~ 1,
+#     channel == "Online" ~ 2
+#   )) %>%
+#   mutate(Gender = ifelse(gender == "M", 1, 0)) %>%
+#   select(claim_number, marital_status, safty_rating, annual_income, high_education_ind,
+#          witness_present_ind, policy_report_filed_ind, address_change_ind, past_num_of_claims,
+#          liab_prct, age_of_vehicle, car_size, Gender, claim_est_payout,
+#          method, site, day, rent_own, age_of_driver, fraud)
 ```
 
 
@@ -145,12 +146,96 @@ mean(preds == fraud_test)
 
 
 ```{r}
-test2 <- 
-  train %>%
+# test2 <-
+#   train %>%
+#   select(claim_number, marital_status, safty_rating, annual_income, high_education_ind,
+#          witness_present_ind, policy_report_filed_ind, address_change_ind, past_num_of_claims,
+#          liab_prct, age_of_vehicle, vehicle_category, gender, claim_est_payout,
+#          channel, accident_site, claim_day_of_week, living_status, age_of_driver, fraud) %>%
+#   mutate(day = case_when(
+#     claim_day_of_week == "Sunday" ~ 0,
+#     claim_day_of_week == "Monday" ~ 1,
+#     claim_day_of_week == "Tuesday" ~ 2,
+#     claim_day_of_week == "Wednesday" ~ 3,
+#     claim_day_of_week == "Thursday" ~ 4,
+#     claim_day_of_week == "Friday" ~ 5,
+#     claim_day_of_week == "Saturday" ~ 6
+#   )) %>%
+#   mutate(rent_own = case_when(
+#     living_status == "Own" ~ 1,
+#     living_status == "Rent" ~ 0
+#   )) %>%
+#   mutate(site = case_when(
+#     accident_site == "Highway" ~ 0,
+#     accident_site == "Parking Lot" ~ 1,
+#     accident_site == "Local" ~ 2
+#   )) %>%
+#   mutate(car_size = case_when(
+#     vehicle_category == "Compact" ~ 0,
+#     vehicle_category == "Medium" ~ 1,
+#     vehicle_category == "Large" ~ 2
+#   )) %>%
+#   mutate(method = case_when(
+#     channel == "Broker" ~ 0,
+#     channel == "Phone" ~ 1,
+#     channel == "Online" ~ 2
+#   )) %>%
+#   mutate(Gender = ifelse(gender == "M", 1, 0)) %>%
+#   select(claim_number, marital_status, safty_rating, annual_income, high_education_ind,
+#          witness_present_ind, policy_report_filed_ind, address_change_ind, past_num_of_claims,
+#          liab_prct, age_of_vehicle, car_size, Gender, claim_est_payout,
+#          method, site, day, rent_own, age_of_driver, fraud) %>%
+#   filter(claim_number %ni% subset)
+# 
+# test2_fraud <-
+#   test2 %>%
+#   select(fraud)
+# test2_fraud <- as.matrix(test2_fraud)
+# 
+# test2 <-
+#   test2 %>%
+#   select(claim_number, marital_status, witness_present_ind, high_education_ind,
+#          policy_report_filed_ind, car_size, Gender,
+#          method, rent_own, age_of_driver, address_change_ind)
+# test2 <- as.matrix(test2)
+```
+
+
+```{r}
+# probs2 <- predict(boost_mod, test2)
+# preds2 <- ifelse(probs2 >= .5, 1, 0)
+# 
+# 
+# match_df <-
+#   bind_cols(preds2, test2_fraud) %>%
+#   rename(preds = ...1, fraud = ...2)
+# 
+# match_df <-
+#   match_df %>%
+#   mutate(match_ones = case_when(
+#     preds2 == 1 & fraud == 1 ~ 1,
+#     preds2 != 1 | fraud != 1 ~ 0
+#   )) %>%
+#   mutate(match_zero = case_when(
+#     preds2 == 0 & fraud == 0 ~ 1,
+#     preds2 != 0 | fraud != 0 ~ 0
+#   ))
+# 
+# mean(match_df$match_ones)
+# mean(match_df$match_zero)
+# mean(match_df$fraud)
+```
+
+
+```{r}
+submission_test <- read_csv("data/test_2021.csv")
+
+submission_test <-
+  submission_test %>%
   select(claim_number, marital_status, safty_rating, annual_income, high_education_ind,
          witness_present_ind, policy_report_filed_ind, address_change_ind, past_num_of_claims,
-         liab_prct, age_of_vehicle, vehicle_category, gender, claim_est_payout,
-         channel, accident_site, claim_day_of_week, living_status, age_of_driver, fraud) %>%
+         liab_prct, age_of_vehicle, gender, claim_est_payout, vehicle_category,
+         channel, accident_site, claim_day_of_week, living_status, age_of_driver) %>%
   mutate(day = case_when(
     claim_day_of_week == "Sunday" ~ 0,
     claim_day_of_week == "Monday" ~ 1,
@@ -183,45 +268,30 @@ test2 <-
   select(claim_number, marital_status, safty_rating, annual_income, high_education_ind,
          witness_present_ind, policy_report_filed_ind, address_change_ind, past_num_of_claims,
          liab_prct, age_of_vehicle, car_size, Gender, claim_est_payout,
-         method, site, day, rent_own, age_of_driver, fraud) %>%
-  filter(claim_number %ni% subset)
+         method, site, day, rent_own, age_of_driver) 
 
-test2_fraud <- 
-  test2 %>%
-  select(fraud)
-test2_fraud <- as.matrix(test2_fraud)
-
-test2 <- 
-  test2 %>% 
+submission_test2 <-
+  submission_test %>%
   select(claim_number, marital_status, witness_present_ind, high_education_ind,
          policy_report_filed_ind, car_size, Gender,
          method, rent_own, age_of_driver, address_change_ind)
-test2 <- as.matrix(test2)
+submission_test2 <- as.matrix(submission_test2)
 ```
 
 
+
 ```{r}
-probs2 <- predict(boost_mod, test2)
-preds2 <- ifelse(probs2 >= .5, 1, 0)
+sub_probs <- predict(boost_mod, submission_test2)
+sub_preds <- ifelse(sub_probs > .5, 1, 0)
 
 
-match_df <-
-  bind_cols(preds2, test2_fraud) %>%
-  rename(preds = ...1, fraud = ...2)
+sub_preds <- bind_cols(submission_test$claim_number, sub_preds)
 
-match_df <-
-  match_df %>%
-  mutate(match_ones = case_when(
-    preds2 == 1 & fraud == 1 ~ 1,
-    preds2 != 1 | fraud != 1 ~ 0
-  )) %>%
-  mutate(match_zero = case_when(
-    preds2 == 0 & fraud == 0 ~ 1,
-    preds2 != 0 | fraud != 0 ~ 0
-  ))
+sub_preds <-
+  sub_preds %>%
+  mutate(claim_number = ...1, pred = ...2) %>%
+  select(claim_number, pred)
 
-mean(match_df$match_ones)
-mean(match_df$match_zero)
-mean(match_df$fraud)
+write_csv(sub_preds, "submission_files/sub_1.csv")
 ```
 
