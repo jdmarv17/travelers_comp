@@ -1,0 +1,69 @@
+---
+title: "data_exploration_dino"
+author: "Dino"
+date: "11/1/2021"
+output: html_document
+---
+
+
+```{r}
+library("ggplot2")
+library("GGally")
+library("readr")
+library("tidyverse")
+library("randomForest")
+library("lubridate")
+library("caret")
+```
+
+```{r}
+col_types_train = "iif?idllff?ffidiflddfdfdf"
+col_types_test = "iif?idllff?ffidiflddfdfd"
+train_total = read_csv("data/train_2021.csv", col_types = col_types_train)
+train_total = train_total %>% mutate(claim_date = mdy(claim_date),
+                                     witness_present_ind = as.logical(witness_present_ind),
+                                     marital_status = as.logical(marital_status))
+train_total = train_total %>% mutate(payout_car = claim_est_payout / vehicle_price,
+                                     payout_income = claim_est_payout / annual_income,
+                                     vehicle_price_age = vehicle_price / (age_of_vehicle+1))
+
+test_total = read_csv("data/test_2021.csv", col_types = col_types_test)
+
+cols_of_interest =
+  c("age_of_driver",    # positive integer
+    "safty_rating",     # 0 - 100 score
+    "annual_income",    # positive double
+    "liab_prct",        # 0 - 100 score
+    "claim_est_payout", # positive double
+    "age_of_vehicle",   # positive integer
+    "vehicle_price"     # positive double
+    )
+
+train_total %>% select(cols_of_interest) %>% na.omit() %>% cor()
+
+```
+
+
+```{r}
+train_no_na = train_total %>% select(-c("zip_code")) %>% na.omit()
+
+
+set.seed(51)
+train_sample = sample_n(train_no_na, 
+                        5000, 
+                        replace = FALSE, 
+                        weight = if_else(train_no_na$fraud==1, 0.9, 0.1)
+                        )
+rf = randomForest(fraud~., data = train_sample, ntree = 1000, mtry=8)
+print(rf)
+
+pred1 = predict(rf, train_no_na)
+confusionMatrix(pred1, train_no_na$fraud)
+```
+
+```{r}
+
+pred2 = predict(rf, test_total)
+
+```
+
