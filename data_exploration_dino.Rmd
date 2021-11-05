@@ -26,7 +26,32 @@ train_total = train_total %>% mutate(claim_date = mdy(claim_date),
 train_total = train_total %>% mutate(payout_car = claim_est_payout / vehicle_price,
                                      payout_income = claim_est_payout / annual_income,
                                      vehicle_price_age = vehicle_price / (age_of_vehicle+1))
+```
 
+```{r}
+# Bedford's law?
+
+leading_digits = function(x, n) {
+  as.numeric(substring(as.character(x), 1, n))
+}
+
+train_bf = train_total %>% mutate(bf_income = leading_digits(annual_income, 1),
+                       bf_payout = leading_digits(claim_est_payout, 1),
+                       bf_weight = leading_digits(vehicle_weight, 1))
+
+histogram(train_bf$bf_income)
+histogram(train_bf$bf_payout)
+histogram(train_bf$bf_weight)
+
+train_bf %>% filter(bf_income == 5) %>% summary() # highly skewed, maybe take 1st 2 digits?
+train_bf %>% filter(bf_payout > 7) %>% summary() # somewhat interesting
+train_bf %>% filter(bf_weight >= 6) %>% summary() # probably boring
+
+```
+
+
+
+```{r}
 test_total = read_csv("data/test_2021.csv", col_types = col_types_test)
 
 cols_of_interest =
@@ -54,7 +79,7 @@ train_sample = sample_n(train_no_na,
                         replace = FALSE, 
                         weight = if_else(train_no_na$fraud==1, 0.9, 0.1)
                         )
-rf = randomForest(fraud~., data = train_sample, ntree = 1000, mtry=8)
+rf = randomForest(fraud~., data = train_sample, ntree = 750, mtry=6)
 print(rf)
 
 pred1 = predict(rf, train_no_na)
