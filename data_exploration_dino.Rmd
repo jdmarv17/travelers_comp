@@ -8,7 +8,6 @@ output: html_document
 
 ```{r}
 library("ggplot2")
-library("GGally")
 library("readr")
 library("tidyverse")
 library("randomForest")
@@ -65,7 +64,7 @@ train_clean = train_clean %>% mutate(payout_car = claim_est_payout / vehicle_pri
 ```
 
 
-```{r}
+```{r bedford}
 # Bedford's law?
 
 leading_digits = function(x, n) {
@@ -75,7 +74,9 @@ leading_digits = function(x, n) {
 train_bf = train_clean %>% mutate(bf_income_1 = leading_digits(annual_income, 1),
                                   bf_income_2 = leading_digits(annual_income, 2),
                                   bf_payout = leading_digits(claim_est_payout, 1),
-                                  bf_weight = leading_digits(vehicle_weight, 1))
+                                  bf_weight = leading_digits(vehicle_weight, 1)
+                                  )
+
 
 histogram(train_bf$bf_income_1)
 histogram(train_bf$bf_income_2)
@@ -86,34 +87,52 @@ train_bf %>% filter(bf_income_1 == 5) %>% summary() # highly skewed, maybe take 
 train_bf %>% filter(bf_payout > 7) %>% summary() # somewhat interesting
 train_bf %>% filter(bf_weight >= 6) %>% summary() # probably boring
 
+train_bf = train_bf %>% select(-c("bf_weight"))
+
 ```
 
 
 
-```{r}
+```{r clean-test}
 test_total = read_csv("data/test_2021.csv", col_types = col_types_test)
+test_clean = test_total %>% mutate(claim_date = mdy(claim_date),
+                                   witness_present_ind = as.logical(witness_present_ind),
+                                   marital_status = as.logical(marital_status)
+                                   )
 
-cols_of_interest =
-  c("age_of_driver",    # positive integer
-    "safty_rating",     # 0 - 100 score
-    "annual_income",    # positive double
-    "liab_prct",        # 0 - 100 score
-    "claim_est_payout", # positive double
-    "age_of_vehicle",   # positive integer
-    "vehicle_price"     # positive double
-    )
+test_clean = test_clean %>% mutate_all(impute)
+test_clean = test_clean %>% mutate(payout_car = claim_est_payout / vehicle_price,
+                                   payout_income = claim_est_payout / annual_income,
+                                   vehicle_price_age = vehicle_price / (age_of_vehicle+1))
 
-train_total %>% select(cols_of_interest) %>% na.omit() %>% cor()
+test_bf = test_clean %>% mutate(bf_income_1 = leading_digits(annual_income, 1),
+                                bf_income_2 = leading_digits(annual_income, 2),
+                                bf_payout = leading_digits(claim_est_payout, 1),
+                                bf_weight = leading_digits(vehicle_weight, 1)
+                                )
+
+
+# cols_of_interest =
+#   c("age_of_driver",    # positive integer
+#     "safty_rating",     # 0 - 100 score
+#     "annual_income",    # positive double
+#     "liab_prct",        # 0 - 100 score
+#     "claim_est_payout", # positive double
+#     "age_of_vehicle",   # positive integer
+#     "vehicle_price"     # positive double
+#     )
+# 
+# train_total %>% select(cols_of_interest) %>% na.omit() %>% cor()
 
 ```
 
 
-```{r}
+```{r random-forest}
 train_no_na = train_bf %>% select(-c("zip_code")) %>% na.omit()
 
-set.seed(51)
+set.seed(73)
 train_sample = sample_n(train_no_na, 
-                        5000, 
+                        7500, 
                         replace = FALSE, 
                         weight = if_else(train_no_na$fraud==1, 0.9, 0.1)
                         )
@@ -124,9 +143,11 @@ pred1 = predict(rf, train_no_na)
 confusionMatrix(pred1, train_no_na$fraud)
 ```
 
-```{r}
+```{r data-save}
 
-pred2 = predict(rf, test_total)
+pred2 = predict(rf, test_bf)
+output = bind_cols(claim_number = test_bf$claim_number, fraud = pred2)
+write_csv(output, "submission_files/sub_dino_2.csv")
 
 ```
 
